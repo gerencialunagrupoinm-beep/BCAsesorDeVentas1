@@ -88,14 +88,14 @@
       <div class="row">
         <img class="avatar" src="Imagen1.jpg" alt="Orlando Alberto Fernandez Falconi">
         <div>
-          <h1 class="name">Ing. Cristhian Enrique Luna Ordoñez</h1>
-          <p class="role">Fundador de LUNA GI</p>
+          <h1 class="name">Orlando Alberto Fernandez Falconi</h1>
+          <p class="role">Gerente General</p>
         </div>
       </div>
       <div class="grid">
-        <a class="btn" href="tel:9541236528">Llamar</a>
-        <a class="btn" href="https://wa.me/529541236528" target="_blank" rel="noopener">WhatsApp</a>
-        <a class="btn" href="mailto:c1e2l3o4@hotmail.com">Email</a>
+        <a class="btn" href="tel:5554961764">Llamar</a>
+        <a class="btn" href="https://wa.me/525554961764" target="_blank" rel="noopener">WhatsApp</a>
+        <a class="btn" href="mailto:GerenciaLUNAGrupoInm@gmail.com">Email</a>
         <a class="btn" href="https://lunagrupoinm.com/" target="_blank" rel="noopener">Sitio Web</a>
         <a class="btn" id="mapsBtn" href="#" target="_blank" rel="noopener">Ubicación</a>
       </div>
@@ -130,18 +130,18 @@
 
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    // ===== Helpers
     const params = new URLSearchParams(location.search);
     function normalizeMode(v){
       if(!v) return null;
       v = v.toLowerCase();
       if(v==='logo') return 'logo';
-      if(v==='foto' || v==='photo' ) return 'photo';
+      if(v==='foto' || v==='photo') return 'photo';
       return null;
     }
 
-    // ===== Compartir (siempre incluye el modo actual en ?avatar=...)
     let currentMode = 'photo';
+
+    // Compartir con el modo actual en la URL
     const shareBtn = document.getElementById('shareBtn');
     shareBtn.addEventListener('click', async (e)=>{
       e.preventDefault();
@@ -152,13 +152,13 @@
       try{ if(navigator.share){ await navigator.share(data); } else { await navigator.clipboard.writeText(url); shareBtn.querySelector('span').textContent = 'Copiado'; setTimeout(()=>shareBtn.querySelector('span').textContent='Compartir',1400);} }catch(err){}
     });
 
-    // ===== Maps
+    // Maps
     const mapsBtn = document.getElementById('mapsBtn');
     mapsBtn.href = profile.mapsUrl;
 
-    // ===== vCard
+    // vCard: agrega el modo de avatar en NOTE
     document.getElementById('saveVcf').addEventListener('click', ()=>{
-      const vcf = `BEGIN:VCARD\nVERSION:3.0\nFN:${profile.nombre}\nORG:${profile.empresa}\nTITLE:${profile.cargo}\nTEL;TYPE=CELL:${profile.telefono}\nEMAIL;TYPE=INTERNET:${profile.email}\nURL:${profile.sitio}\nNOTE:Ubicación (Maps): ${profile.mapsUrl}\nEND:VCARD`;
+      const vcf = `BEGIN:VCARD\nVERSION:3.0\nFN:${profile.nombre}\nORG:${profile.empresa}\nTITLE:${profile.cargo}\nTEL;TYPE=CELL:${profile.telefono}\nEMAIL;TYPE=INTERNET:${profile.email}\nURL:${profile.sitio}\nNOTE:Avatar=${currentMode}; Ubicación (Maps): ${profile.mapsUrl}\nEND:VCARD`;
       const blob = new Blob([vcf], {type:'text/vcard;charset=utf-8'});
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
@@ -167,7 +167,7 @@
       setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
     });
 
-    // ===== Toggle de avatar (Foto / Logo) en top bar + lectura de ?avatar
+    // Toggle de avatar + autodetección (si no hay foto: modo logo)
     const avatarEl = document.querySelector('.avatar');
     const photoBtn = document.getElementById('avatarPhoto');
     const logoBtn  = document.getElementById('avatarLogo');
@@ -192,11 +192,28 @@
       localStorage.setItem('avatarMode', mode);
     }
 
+    async function photoExists(){
+      return new Promise((resolve)=>{
+        const img = new Image();
+        img.onload = ()=> resolve(true);
+        img.onerror = ()=> resolve(false);
+        img.src = 'Imagen1.jpg?' + Date.now();
+      });
+    }
+
     if(photoBtn && logoBtn){
       photoBtn.addEventListener('click', (e)=>{ e.preventDefault(); setAvatar('photo'); });
       logoBtn.addEventListener('click',  (e)=>{ e.preventDefault(); setAvatar('logo');  });
-      const initial = normalizeMode(params.get('avatar')) || localStorage.getItem('avatarMode') || 'photo';
-      setAvatar(initial);
+
+      (async ()=>{
+        const paramMode = normalizeMode(params.get('avatar'));
+        const stored    = normalizeMode(localStorage.getItem('avatarMode'));
+        if(paramMode){ setAvatar(paramMode); return; }
+        if(stored){ setAvatar(stored); return; }
+        // autodetecta foto; si no existe, usa logo
+        const ok = await photoExists();
+        setAvatar(ok ? 'photo' : 'logo');
+      })();
     }
   </script>
 </body>
